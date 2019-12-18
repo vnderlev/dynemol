@@ -17,6 +17,7 @@ character (len=7)       :: argument
 logical                 :: DensityMatrix , AutoCorrelation , VDOS_ , Mutate_Cross , QMMM , LCMO , exist , preview , Adaptive_
 logical                 :: GaussianCube , Survival , SPECTRUM , DP_Moment , Alpha_Tensor , OPT_parms , ad_hoc , restart
 logical                 :: verbose , static , EnvField_ , Coulomb_ , CG_ , profiling , Induced_ , NetCharge , HFP_Forces 
+logical                 :: resume
 logical , parameter     :: T_ = .true. , F_ = .false. 
 
 contains
@@ -209,6 +210,9 @@ if( COMMAND_ARGUMENT_COUNT() /= 0 ) then
 
         case( "preview" )
         preview = .true.
+
+        case( "resume" )
+        resume = .true.
 
     end select
 end if
