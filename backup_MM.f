@@ -1,109 +1,115 @@
 module Backup_MM_m
 
-    use type_m       , only : dynemolworkdir
-    use parameters_m , only : restart 
-    use MM_types     , only : MM_system , MM_atomic
+   use type_m       , only : dynemolworkdir
+   use parameters_m , only : restart
+   use MM_types     , only : MM_system , MM_atomic
 
-    public  :: Security_Copy_MM , Restart_MM
+   public  :: Security_Copy_MM , Restart_MM
 
 contains
 !
-!                                                                    
+!
 !
 !===============================================
-subroutine Security_Copy_MM( MM , atom , frame )
+   subroutine Security_Copy_MM( MM , atom , frame )
 !===============================================
-implicit none
-type(MM_system) , intent(in)    :: MM
-type(MM_atomic) , intent(in)    :: atom(:)
-integer         , intent(in)    :: frame
+      implicit none
+      type(MM_system) , intent(in)    :: MM
+      type(MM_atomic) , intent(in)    :: atom(:)
+      integer         , intent(in)    :: frame
 
 ! local variables ...
-integer         :: i , j 
-logical , save  :: first_time = .true. 
-logical         :: exist
+      integer         :: i , j
+      logical , save  :: first_time = .true.
+      logical         :: exist
+      real            :: start_time, end_time
 
 ! check whether restart is properly set ...
-If( first_time ) then
+      call CPU_TIME(start_time)
 
-    If( restart ) then
-        inquire( file=dynemolworkdir//"Security_copy_MM.dat", EXIST=exist )   
-        If( exist ) stop " <Security_copy_MM.dat> exists; check restart parameter or move Security_copy_MM.dat to Restart_copy_MM.dat"
-    else
-        inquire( file="Restart_copy_MM.dat", EXIST=exist )
-        If( exist ) stop " <Restart_copy_MM.dat> exists; check restart parameter or delete Restart_copy_MM.dat"
-    end If
+      If( first_time ) then
 
-    ! get rid of Restart_copy_MM.dat for new Security_copy_MM.dat ...
-    inquire( file=dynemolworkdir//"Restart_copy_MM.dat", EXIST=exist )
-    If( exist ) CALL system( "rm Restart_copy_MM.dat" )
+         If( restart ) then
+            inquire( file=dynemolworkdir//"Security_copy_MM.dat", EXIST=exist )
+            If( exist ) stop " <Security_copy_MM.dat> exists; check restart parameter or move Security_copy_MM.dat to Restart_copy_MM.dat"
+         else
+            inquire( file="Restart_copy_MM.dat", EXIST=exist )
+            If( exist ) stop " <Restart_copy_MM.dat> exists; check restart parameter or delete Restart_copy_MM.dat"
+         end If
 
-    first_time = .false.
+         ! get rid of Restart_copy_MM.dat for new Security_copy_MM.dat ...
+         inquire( file=dynemolworkdir//"Restart_copy_MM.dat", EXIST=exist )
+         If( exist ) CALL system( "rm Restart_copy_MM.dat" )
 
-end If
+         first_time = .false.
 
-open(unit=33, file="ancillary.trunk/Security_copy_MM.dat", status="unknown", form="unformatted", action="write")
+      end If
 
-write(33) frame
+      open(unit=33, file="ancillary.trunk/Security_copy_MM.dat", status="unknown", form="unformatted", action="write")
 
-write(33) MM % N_of_atoms
+      write(33) frame
 
-do i = 1 , 3
-    write(33) MM % box(i)
-end do
+      write(33) MM % N_of_atoms
 
-do i = 1 , size(atom)
-   write(33) atom(i) % charge
-   write(33) atom(i) % MM_charge
-   do j = 1 , 3
-        write(33) atom(i) % xyz(j)
-        write(33) atom(i) % vel(j)
-        write(33) atom(i) % ftotal(j)
-    end do
-end do
+      do i = 1 , 3
+         write(33) MM % box(i)
+      end do
 
-close( 33 )
+      do i = 1 , size(atom)
+         write(33) atom(i) % charge
+         write(33) atom(i) % MM_charge
+         do j = 1 , 3
+            write(33) atom(i) % xyz(j)
+            write(33) atom(i) % vel(j)
+            write(33) atom(i) % ftotal(j)
+         end do
+      end do
 
-end subroutine Security_Copy_MM
+      close( 33 )
+
+      call CPU_TIME(end_time)
+      print *, 'Total Security_Copy execution time: ', end_time - start_time, ' seconds'
+
+   end subroutine Security_Copy_MM
 !
 !
 !
 !=========================================
-subroutine Restart_MM( MM , atom , frame )
+   subroutine Restart_MM( MM , atom , frame )
 !=========================================
-implicit none
-type(MM_system) , intent(inout) :: MM
-type(MM_atomic) , intent(inout) :: atom(:)
-integer         , intent(out)   :: frame
+      implicit none
+      type(MM_system) , intent(inout) :: MM
+      type(MM_atomic) , intent(inout) :: atom(:)
+      integer         , intent(out)   :: frame
 
 ! local variables ...
-integer :: i , j , file_err
+      integer :: i , j , file_err
 
-open(unit=33, file="Restart_copy_MM.dat", form="unformatted", status="old", action="read" , iostat=file_err , err=11 )
+      open(unit=33, file="Restart_copy_MM.dat", form="unformatted", status="old", action="read" , iostat=file_err , err=11 )
 
-read(33) frame
+      read(33) frame
 
-read(33) MM % N_of_atoms
+      read(33) MM % N_of_atoms
 
-do i = 1 , 3
-    read(33) MM % box(i)
-end do
+      do i = 1 , 3
+         read(33) MM % box(i)
+      end do
 
-do i = 1 , size(atom)
-    read(33) atom(i) % charge
-    read(33) atom(i) % MM_charge
-    do j = 1 , 3
-        read(33) atom(i) % xyz(j)
-        read(33) atom(i) % vel(j)
-        read(33) atom(i) % ftotal(j)
-    end do
-end do
+      do i = 1 , size(atom)
+         read(33) atom(i) % charge
+         read(33) atom(i) % MM_charge
+         do j = 1 , 3
+            read(33) atom(i) % xyz(j)
+            read(33) atom(i) % vel(j)
+            read(33) atom(i) % ftotal(j)
+         end do
+      end do
 
-close( 33 )
+      close( 33 )
 
-11 if( file_err > 0 ) stop " <Restart_copy_MM.dat> file not found; terminating execution; mv Security_copy_MM.dat Restart_copy_MM.dat "
+11    if( file_err > 0 ) stop " <Restart_copy_MM.dat> file not found; terminating execution; mv Security_copy_MM.dat Restart_copy_MM.dat "
 
-end subroutine Restart_MM
+   end subroutine Restart_MM
 !
 !
 !
