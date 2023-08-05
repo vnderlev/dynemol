@@ -478,7 +478,7 @@ contains
       real            :: start_time, end_time
 
       call CPU_TIME(start_time)
-      write( * , 230 , advance='no' )  it , frame , t , duration
+      write( * , 230 , advance='no' )  it , frame , t , end_time - start_time
 
 ! check whether restart conditions are properly set ...
       If( first_time ) then
